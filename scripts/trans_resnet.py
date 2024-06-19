@@ -1,27 +1,11 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
-from PIL import Image
-import os
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
 import timm
-
-class CustomImageDataset(Dataset):
-    def __init__(self, image_paths, labels, transform=None):
-        self.image_paths = image_paths
-        self.labels = labels
-        self.transform = transform
-    
-    def __len__(self):
-        return len(self.image_paths)
-    
-    def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]).convert('RGB')
-        label = self.labels[idx]
-        if self.transform:
-            image = self.transform(image)
-        return image, label
+from scripts.image_dataset import ImageDataset
+from PIL import Image
 
 class TransResNet:
     def __init__(self, model_path=None):
@@ -30,6 +14,11 @@ class TransResNet:
         self.num_workers = 4
         self.epochs = 10
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.transform = transforms.Compose({
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        })
         self.model = self.build_model()
         if model_path:
             self.model = self.load_model(model_path)
@@ -40,33 +29,13 @@ class TransResNet:
         return model
     
     def load_data(self, train_image_paths, train_labels, val_image_paths, val_labels):
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        ])
 
-        train_dataset = CustomImageDataset(train_image_paths, train_labels, transform=transform)
-        val_dataset = CustomImageDataset(val_image_paths, val_labels, transform=transform)
+        train_dataset = ImageDataset(train_image_paths, train_labels, transform=self.transform)
+        val_dataset = ImageDataset(val_image_paths, val_labels, transform=self.transform)
 
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
         val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
         return train_loader, val_loader
-    
-    def validation_accuracy(self, val_loader):
-        self.model.eval()
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = self.model(inputs)
-                _, predicted = torch.max(outputs, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
-        
-        accuracy = correct / total
-        return accuracy
     
     def train_n_evaluate(self, train_image_paths, train_labels, val_image_paths, val_labels):
         train_loader, val_loader = self.load_data(train_image_paths, train_labels, val_image_paths, val_labels)
@@ -88,7 +57,7 @@ class TransResNet:
                 running_loss += loss.item()
 
             epoch_loss = running_loss / len(train_loader)
-            val_accuracy = self.validation_accuracy(val_loader)
+            val_accuracy = self.evaluate(val_loader)
             print(f'Epoch {epoch + 1}/{self.epochs}, Loss: {epoch_loss:.4f}, Validation Accuracy: {val_accuracy * 100:.2f}%')
 
             if val_accuracy > best_val_accuracy:
@@ -97,14 +66,44 @@ class TransResNet:
         
         print(f'Best Validation Accuracy: {best_val_accuracy * 100:.2f}%')
 
+    def evaluate(self, data_loader):
+        self.model.eval()
+        correct = 0
+        total = 0
+        with torch.no_grad():
+            for inputs, labels in data_loader:
+                inputs, labels = inputs.to(self.device), labels.to(self.device)
+                outputs = self.model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+        
+        accuracy = correct / total
+        return accuracy
     
+    def result(self):
+        test_dataset = datasets.ImageFolder(root='../data/test', transform=self.transform)
+        test_loader = DataLoader(test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        test_accuracy = self.evaluate(test_loader)
+        print(f'Test Accuracy: {test_accuracy * 100:.2f}%')
+        return test_accuracy
+
     def save_model(self, model_path):
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
         torch.save(self.model.state_dict(), model_path)
-        print(f'Model saved to {model_path}')
     
     def load_model(self, model_path):
         self.model.load_state_dict(torch.load(model_path))
         self.model.to(self.device)
-        print(f'Model loaded from {model_path}')
+    
+    def predict(self, image):
+        image = Image.open(image).convert('RGB')
+        image = self.transform(image)
+        image = image.unsequeeze(0).to(self.device)
+
+        self.model.eval()
+        with torch.no_grad():
+            outputs = self.model(image)
+            _, predicted = torch.max(outputs, 1)
+        
+        return predicted.item()
     
