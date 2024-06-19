@@ -17,21 +17,18 @@ class HOGSVM:
     def extract_hog_features(self, image_paths):
         features = []
         for img_path in image_paths:
-            img_full_path = os.path.join(DATA_DIR, img_path)
-            img = cv2.imread(img_full_path, cv2.IMREAD_GRAYSCALE)
-            img_resized = cv2.resize(img, (128, 128))
-            hog_features = hog(img_resized, pixels_per_cell=(16, 16), cells_per_block=(4, 4), feature_vector=True)
+            img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+            img_resized = cv2.resize(img, (64, 64))
+            hog_features = hog(img_resized, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
             features.append(hog_features)
         return np.array(features)
     
-    def train(self, image_paths, labels):
-        train_features = self.extract_hog_features(image_paths)
-        self.model.fit(train_features, labels)
-    
-    def evaluate(self, image_paths, labels):
-        val_features = self.extract_hog_features(image_paths)
+    def train_n_evaluate(self, train_image_paths, train_labels, val_image_paths, val_labels):
+        train_features = self.extract_hog_features(train_image_paths)
+        self.model.fit(train_features, train_labels)
+        val_features = self.extract_hog_features(val_image_paths)
         val_predictions = self.model.predict(val_features)
-        accuracy = accuracy_score(labels, val_predictions)
+        accuracy = accuracy_score(val_labels, val_predictions)
         return accuracy
     
     def save_model(self, model_path):
@@ -39,8 +36,8 @@ class HOGSVM:
     
     def preprocess_image(self, img_path):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        img_resized = cv2.resize(img, (128, 128))
-        hog_features = hog(img_resized, pixels_per_cell=(16, 16), cells_per_block=(4, 4), feature_vector=True)
+        img_resized = cv2.resize(img, (64, 64))
+        hog_features = hog(img_resized, pixels_per_cell=(8, 8), cells_per_block=(2, 2), feature_vector=True)
         return hog_features
     
     def predict(self, img_path):

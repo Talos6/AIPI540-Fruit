@@ -6,8 +6,6 @@ DATA_DIR = os.path.join(SCRIPT_DIR, '..', 'data')
 LABEL_FILE_PATH = os.path.join(SCRIPT_DIR, '..', 'data', 'classname.txt')
 
 class DataStore:
-    def __init__(self):
-        self.labels = self.parse_classes()
 
     def parse_classes(self):
         with open(LABEL_FILE_PATH, 'r') as file:
@@ -20,5 +18,6 @@ class DataStore:
 
         data = pd.read_csv(csv_file_path)
         image_paths = data['image:FILE'].tolist()
+        image_paths = list(map(lambda x: os.path.join(DATA_DIR, x), image_paths))
         labels = data['category'].tolist()
         return image_paths, labels
