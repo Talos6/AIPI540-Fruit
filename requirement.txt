@@ -4,6 +4,7 @@ scikit-learn
 joblib
 numpy
 pandas
+streamlit
 torch
 torchvision
 timm

@@ -77,6 +77,7 @@ class TransResNet:
         
         for epoch in range(self.epochs):
             self.model.train()
+            running_loss = 0.0
             for inputs, labels in train_loader:
                 inputs, labels = inputs.to(self.device), labels.to(self.device)
                 optimizer.zero_grad()
