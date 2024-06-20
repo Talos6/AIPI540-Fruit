@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -5,23 +6,22 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import timm
 from scripts.image_dataset import ImageDataset
-from PIL import Image
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
 
 class TransResNet:
-    def __init__(self, model_path=None):
+    def __init__(self):
         self.num_classes = 100
         self.batch_size = 8
         self.num_workers = 4
         self.epochs = 10
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.transform = transforms.Compose({
+        self.transform = transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        })
+        ])
         self.model = self.build_model()
-        if model_path:
-            self.model = self.load_model(model_path)
     
     def build_model(self):
         model = timm.create_model('resnet50', pretrained=True, num_classes=self.num_classes)
@@ -82,23 +82,22 @@ class TransResNet:
         return accuracy
     
     def result(self):
-        test_dataset = datasets.ImageFolder(root='../data/test', transform=self.transform)
+        test_dataset = datasets.ImageFolder(root=os.path.join(ROOT, '../data/test'), transform=self.transform)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
         test_accuracy = self.evaluate(test_loader)
         print(f'Test Accuracy: {test_accuracy * 100:.2f}%')
         return test_accuracy
 
-    def save_model(self, model_path):
-        torch.save(self.model.state_dict(), model_path)
+    def save_model(self):
+        torch.save(self.model.state_dict(), os.path.join(ROOT, '../models/trans_resnet.pth'))
     
-    def load_model(self, model_path):
-        self.model.load_state_dict(torch.load(model_path))
+    def load_model(self):
+        self.model.load_state_dict(torch.load(os.path.join(ROOT, '../models/trans_resnet.pth'), map_location=self.device))
         self.model.to(self.device)
     
     def predict(self, image):
-        image = Image.open(image).convert('RGB')
         image = self.transform(image)
-        image = image.unsequeeze(0).to(self.device)
+        image = image.unsqueeze(0).to(self.device)
 
         self.model.eval()
         with torch.no_grad():

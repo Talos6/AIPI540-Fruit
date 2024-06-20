@@ -2,7 +2,7 @@ opencv-python-headless
 scikit-image
 scikit-learn
 joblib
-numpy
+numpy==1.23
 pandas
 streamlit
 torch
