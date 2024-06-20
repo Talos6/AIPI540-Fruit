@@ -2,6 +2,9 @@ from torch.utils.data import Dataset
 from PIL import Image
 
 class ImageDataset(Dataset):
+    """
+    A custom torch dataset class for handling image data from the csv data mapping.
+    """
     def __init__(self, image_paths, labels, transform=None):
         self.image_paths = image_paths
         self.labels = labels

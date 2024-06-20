@@ -11,6 +11,9 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 
 class TransResNet:
     def __init__(self):
+        """
+        Configurations.
+        """
         self.num_classes = 100
         self.batch_size = 8
         self.num_workers = 4
@@ -24,12 +27,14 @@ class TransResNet:
         self.model = self.build_model()
     
     def build_model(self):
+        """
+        Transfer learning: create a model with pre-trained ResNet50, replace the output layer.
+        """
         model = timm.create_model('resnet50', pretrained=True, num_classes=self.num_classes)
         model = model.to(self.device)
         return model
     
     def load_data(self, train_image_paths, train_labels, val_image_paths, val_labels):
-
         train_dataset = ImageDataset(train_image_paths, train_labels, transform=self.transform)
         val_dataset = ImageDataset(val_image_paths, val_labels, transform=self.transform)
 
@@ -38,6 +43,9 @@ class TransResNet:
         return train_loader, val_loader
     
     def train_n_evaluate(self, train_image_paths, train_labels, val_image_paths, val_labels):
+        """
+        Load data, train the model through epochs, evaluate on validation set, and save the best model.
+        """
         train_loader, val_loader = self.load_data(train_image_paths, train_labels, val_image_paths, val_labels)
         
         criterion = nn.CrossEntropyLoss()
@@ -67,6 +75,9 @@ class TransResNet:
         print(f'Best Validation Accuracy: {best_val_accuracy * 100:.2f}%')
 
     def evaluate(self, data_loader):
+        """
+        Returns accuracy of the model on the given data.
+        """
         self.model.eval()
         correct = 0
         total = 0
@@ -82,6 +93,9 @@ class TransResNet:
         return accuracy
     
     def result(self):
+        """
+        Run the model on the test set.
+        """
         test_dataset = datasets.ImageFolder(root=os.path.join(ROOT, '../data/test'), transform=self.transform)
         test_loader = DataLoader(test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
         test_accuracy = self.evaluate(test_loader)
@@ -96,6 +110,9 @@ class TransResNet:
         self.model.to(self.device)
     
     def predict(self, image):
+        """
+        Take an image as input and return the predicted class.
+        """
         image = self.transform(image)
         image = image.unsqueeze(0).to(self.device)
 
