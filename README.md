@@ -11,6 +11,7 @@ Xinyue(Yancey) Yang
 
 ## Model
 **Classical ML**: A pipeline which reads image greyscal, abstract HOG features, and fitted into a SVM model.
+
 **Neural Network**: A pretrained ResNet50 with modified output layer. 
 
 ## Instruction
