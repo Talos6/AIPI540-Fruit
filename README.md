@@ -1,7 +1,7 @@
 # AIPI540-Fruit
 
 ## Description
-This repository contains the code for the AIPI540-Fruit project. The project aims to classify different types of fruits using machine learning techniques.
+The project aims to classify different types of fruits and provide a user interface that accepting any fruit image to be predicted.
 
 ## Author
 Xinyue(Yancey) Yang
