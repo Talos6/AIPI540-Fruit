@@ -6,21 +6,26 @@ from scripts.data_store import DataStore
 import time
 
 def run():
+    # Load the classnames
     data_store = DataStore()
     label_dict = data_store.parse_classes()
 
+    # Load the model
     trans_resnet = TransResNet()
     trans_resnet.load_model()
 
+    # UI, top for app, bottom for details
     top_half, bottom_half = st.container(), st.container()
 
     with top_half:
+        # Image uploader
         default_image = Image.open('./data/streamlit/default.jpg')
         img_display = st.image(default_image, use_column_width=True)
         uploaded_file = st.file_uploader("Choose a image", type="jpg")
         st.header("Question: what is this fruit?")
 
         if uploaded_file is not None:
+            # Display the image, and predict the label
             image = Image.open(uploaded_file)
             img_display.image(image, use_column_width=True)
             with st.spinner('Recognizing...'):
@@ -29,9 +34,11 @@ def run():
             st.header(f"Answer: {label_dict.get(predicted_label)}")
 
     with bottom_half:
+        # Details
         tab1, tab2, tab3, tab4, tab5 = st.tabs(["overview", "data", "workflow", "analytics", "reference"])
 
         with tab1:
+            # Overview
             st.write("## Overview")
             st.write("### Problem")
             st.write("People often encounter fruits they don't recognize and have difficulty distinguishing between similar-looking varieties. This lack of knowledge can lead to confusion and misidentification.")
@@ -46,6 +53,7 @@ def run():
 
 
         with tab2:
+            # Data
             st.write("## Data")
             st.write("### Source")
             st.write("The source is from Kaggle Fruits 100 datatsets. It consist over 14k JPEG images of different fruits. This is the original data we trained our model.")
@@ -62,6 +70,7 @@ def run():
 
 
         with tab3:
+            # Workflow
             st.write("## Workflow")
             st.write("### Prior Efforts")
             st.markdown("""
@@ -85,6 +94,7 @@ def run():
             """)
 
         with tab4:
+            # Analytics
             st.write("## Analytics")
             st.write("### Accuracy Score")
             accuracy_data = {
@@ -100,6 +110,7 @@ def run():
             st.write("**Test Accuracy: 0.78**")
 
         with tab5:
+            # Reference
             st.write("## Reference")
             st.write("### Author")
             st.write("Xinyue(Yancey) Yang")
